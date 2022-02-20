@@ -6,3 +6,8 @@
 *.xml
 #*.doc
 #*.docx
+.idea/**.xml
+.idea/
+idea/
+*.xml
+.idea/misc.xml
