@@ -37,8 +37,8 @@ def build_data(data, past, shift, x, y):
     return x , y
 def count(lane , x , y):
     data = pd.DataFrame(columns=["inst_speed"])
-    end = 45
-    start = 5
+    end = 1
+    start = 0
     inputdir = 'interavg_result/out'
     meanfolder_path = 'finalavg_result'
     
@@ -171,7 +171,8 @@ if __name__ == "__main__":
         lanes = edge.getLanes()
         for lane in lanes:
             x , y = count(lane.getID() , x , y)
-        if len(x) <= 100 or len(y) <=100:
+        # if len(x) <= 100 or len(y) <=100:
+        if len(x) <= 10 or len(y) <= 10:
             continue
         
         

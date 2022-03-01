@@ -10,7 +10,7 @@ def getRNinfo():
     
     """
     RoadSegment_info
-    {id:[from(node),to(node),lenght,lane_number]
+    {id:[from(node),to(node),lenght,lane_number,lanename[0]]
     """
     RS_info = {}
               

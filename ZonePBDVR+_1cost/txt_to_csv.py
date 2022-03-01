@@ -24,7 +24,7 @@ import sumolib
 if __name__ == "__main__":
     parser = OptionParser()#parser = OptionParser()
     parser.add_option("-s", "--start", dest="start", type="int" ,default="0", help="The start used to run SUMO start from txt_result/outx")
-    parser.add_option("-e", "--end", dest="end", type="int" ,default="1", help="The end used to run SUMO end at txt_result/outx")
+    parser.add_option("-e", "--end", dest="end", type="int" ,default="10", help="The end used to run SUMO end at txt_result/outx")
     (options, args) = parser.parse_args()
     start = options.start
     end = options.end
@@ -67,6 +67,7 @@ if __name__ == "__main__":
                     data = data.sort_values(by=["exit"])
                     #print("enter")
                     #print(data["exit"])
+                    print("Beging " + 'csv_result/out'+str(i)+"/"+lane +".csv")
                     data.to_csv('csv_result/out'+str(i)+"/"+lane +".csv" , index=False)
 
             except:

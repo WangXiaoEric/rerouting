@@ -161,11 +161,14 @@ def run(i,VR):
     """get road network info."""
     RS_info, con_info, TL_info, conn_TL = gni.getRNinfo()
     RN = gni.loadedgeRN(RS_info, con_info)
+    # Node info
     Coordinate = gni.getCoordinate()
     if not os.path.exists('CVtxt_result/'):
         os.makedirs('CVtxt_result/')
 
     while traci.simulation.getMinExpectedNumber() > 0:
+        if step == 99:
+            print("=======")
         traci.simulationStep()
 
         """collect road speed and output in txt_result/"""
@@ -209,7 +212,7 @@ def run(i,VR):
 
             time_start = time.time()
             RSDensities = tcp.updateRSDensities(RS_info, RSNumber)
-            congestedRS, content,edgeocc_dict = tcp.detectCongestion(RSDensities, con_threshold,edgeocc_dict)
+            congestedRS, content,edgeocc_dict = tcp.detectCongestion(RSDensities, con_threshold, edgeocc_dict)
             time_detect = time.time()
             log += " ,detect time: "+str( time_detect-time_start )
 

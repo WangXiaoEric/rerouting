@@ -72,7 +72,7 @@ def CalMinsAvgSpeedSingleFile(outputdir , data ,LoopTime = 60):
     else :
         avg_speed = data[StartIdx:EndIdx]["avgspeed"].sum()/num
 
-    interval = t 
+    interval = t
 
     newrow = {"interval":interval ,"avgspeed": avg_speed }
     out = out.append(newrow, ignore_index=True)
@@ -299,7 +299,7 @@ def SelectVehicleAndZ(outputdir, avg_data , inst_data ,LoopTime = 300):
 if __name__ == "__main__":
     parser = OptionParser()#parser = OptionParser()
     parser.add_option("-s", "--start", dest="start",type="int" , default="0", help="The start used to run SUMO start from csv_result/outx")
-    parser.add_option("-e", "--end", dest="end", type="int" ,default="1", help="The end used to run SUMO end at csv_result/outx")
+    parser.add_option("-e", "--end", dest="end", type="int" ,default="10", help="The end used to run SUMO end at csv_result/outx")
     (options, args) = parser.parse_args()
     start = options.start
     end = options.end
