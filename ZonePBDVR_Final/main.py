@@ -107,19 +107,19 @@ def initialize():
             Lane_dict[lane.getID()] = {}
 
     alledgelist = traci.edge.getIDList()
-    speed_info = {}
-    avgspeed_info = {}
-    speed_result = {}
+    mid_loop_detector_speed_info = {}
+    tensec_avgspeed_info = {}
+    loopd_avg_speed_result = {}
     avgspeed_result = {}
     edgeocc_dict = {}
     oneminspeed_dict = {}
     for EdgeID in alledgelist:
         
         if EdgeID.find(':') == -1:
-            speed_info[EdgeID] = []
-            avgspeed_info[EdgeID] = []
+            mid_loop_detector_speed_info[EdgeID] = []
+            tensec_avgspeed_info[EdgeID] = []
             oneminspeed_dict[EdgeID] = []
-            speed_result[EdgeID] = []
+            loopd_avg_speed_result[EdgeID] = []
             edgeocc_dict[EdgeID] = {}
 
 
@@ -156,7 +156,7 @@ def initialize():
 
         
 
-    return Lane_dict , speed_info , oneminspeed_dict , speed_result , edgeocc_dict , Zone_dict , EdgeTOZone_dict , avgspeed_info , avgspeed_result
+    return Lane_dict , mid_loop_detector_speed_info , oneminspeed_dict , loopd_avg_speed_result , edgeocc_dict , Zone_dict , EdgeTOZone_dict , tensec_avgspeed_info , avgspeed_result
 
 
 def run(i,VR):
@@ -165,8 +165,10 @@ def run(i,VR):
     log = ""
     #s = 0
     step = 0
-    
-    Lane_dict , speed_info , oneminspeed_dict , speed_result , edgeocc_dict , Zone_dict , EdgeTOZone_dict , avgspeed_info , avgspeed_result = initialize()
+
+    #Lane_dict - 道路loop检测器对象
+    #speed_info - 以edgeID为字典的数据
+    Lane_dict , mid_loop_detector_speed_info , oneminspeed_dict , loopd_avg_speed_result , edgeocc_dict , Zone_dict , EdgeTOZone_dict , tensec_avgspeed_info , avgspeed_result = initialize()
 
     """get road network info."""    
     RS_info, con_info, TL_info, conn_TL = gni.getRNinfo()
@@ -179,12 +181,12 @@ def run(i,VR):
     
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
-
+        #每一步骤都需要记录状况，与记录日志的道理是一致的
         Lane_dict = GetStart(Lane_dict)
         Lane_dict = GetMid(Lane_dict)
         Lane_dict = GetEnd(Lane_dict)
-
-        for EdgeID, speed_list in speed_info.items():
+        #每一步骤记录Mid_ detector的速度信息  后面需要关注一下speed_info的速度情况；
+        for EdgeID, speed_list in mid_loop_detector_speed_info.items():
             count = 0
             instspeed = 0
             total_speed = 0
@@ -205,23 +207,20 @@ def run(i,VR):
         """get speed info: do every 10 sec. (time step)"""
         #'''
         if SimTime  % 10 == 0:
-            for EdgeID, speed_list in avgspeed_info.items():
+            for EdgeID, speed_list in tensec_avgspeed_info.items():
                 speed_list.append(traci.edge.getLastStepMeanSpeed(EdgeID))
                 
         if SimTime %60==0:
-            
+            #更新完毕之后 tensec_avgspeed_info这个数据要清空
             """ update speed data per min."""
-            for EdgeID, speed_list in avgspeed_info.items():
+            for EdgeID, speed_list in tensec_avgspeed_info.items():
                 temp_list = speed_list
                 tempAvgSpeed = np.mean(temp_list)
                 oneminspeed_dict[EdgeID].append(tempAvgSpeed)
                 speed_list[:] = []
         #'''
         if SimTime %300 == 0:
-
-            
-
-            #'''
+            #''' 执行完毕之后一分钟字典oneminspeed_dict清空
             for EdgeID, speed_list in oneminspeed_dict.items():
                 if len(speed_list) !=5:
                     print("speed list !=5")
@@ -232,16 +231,16 @@ def run(i,VR):
                 speed_list[:] = []
             #'''
 
-            for EdgeID, speed_list in speed_info.items():
+            for EdgeID, speed_list in mid_loop_detector_speed_info.items():
                 temp_list = speed_list
                 if not temp_list:
                     if avgspeed_result[EdgeID] >= 11:
-                        speed_result[EdgeID].append(13.89)
+                        loopd_avg_speed_result[EdgeID].append(13.89)
                     else:
-                        speed_result[EdgeID].append(0)
+                        loopd_avg_speed_result[EdgeID].append(0)
                 else:
                     tempAvgSpeed = np.mean(temp_list)
-                    speed_result[EdgeID].append(tempAvgSpeed)
+                    loopd_avg_speed_result[EdgeID].append(tempAvgSpeed)
                 speed_list[:] = []
                 
             diff = 0
@@ -290,7 +289,7 @@ def run(i,VR):
                 RS_list = ra.getAllRS(paths)
                 
                 """"start re-routing""" 
-                diff , same = ra.Reroute(RS_info, TL_info, conn_TL, paths, speed_result, ranked_vehicles, Coordinate, RSDensities, vehicleRS_dict, diff, same, RS_list,MeanSpeed_dict,MeanZ_dict,Model_dict)
+                diff , same = ra.Reroute(RS_info, TL_info, conn_TL, paths, loopd_avg_speed_result, ranked_vehicles, Coordinate, RSDensities, vehicleRS_dict, diff, same, RS_list,MeanSpeed_dict,MeanZ_dict,Model_dict)
                 time_end = time.time()
                 log += ",Reroute time: "+str( time_end - time_detect)
                 gc.collect()
@@ -349,8 +348,9 @@ def run(i,VR):
 if __name__ == "__main__":
     parser = OptionParser()#parser = OptionParser()
     # python3 main - s 0 - e 45
+    # self loop. we want to run only once case, and train Driver-Behavour and LSTM
     parser.add_option("-s", "--start", dest="start",type="int" , default="0", help="The start used to run SUMO start from tripinfox.xml")
-    parser.add_option("-e", "--end", dest="end",type="int" , default="1", help="The end used to run SUMO end at tripinfox.xml")
+    parser.add_option("-e", "--end", dest="end",type="int" , default="100", help="The end used to run SUMO end at tripinfox.xml")
     parser.add_option("--nogui", action="store_true",default=False, help="run the commandline version of sumo")
     (options, args) = parser.parse_args()
     start = options.start
@@ -362,21 +362,21 @@ if __name__ == "__main__":
         sumoBinary = checkBinary('sumo')
         
     con_threshold = 0.7 #congestion threshold value
-    """get history average speed"""
+    """get history average speed""" #从mean文件夹中获取资料， 需要考虑如何在Mean中生成资料
     MeanSpeed_dict = gni.GetPastMeanSpeed()
-    """get history Zmax Zmin"""
+    """get history Zmax Zmin""" #从meanZ文件夹中获取资料， 需要考虑如何在meanZ中生成资料
     MeanZ_dict = gni.GetPastMeanZ()
-    """get model for all road"""
+    """get model for all road""" #获取所有路段的深度训练模型
     Model_dict = gni.GetRoadModel()
 
     
     for i in range(start,end):
-        if i < 9:
-            pn = "data/01"+"/re0"+str(i+1)+".sumocfg"
-            fn = "Experiment_result/tripinfo"+str(i+1)+".xml"
-        else:
-            pn = "data/01"+"/re"+str(i+1)+".sumocfg"
-            fn = "Experiment_result/tripinfo"+str(i+1)+".xml"
+
+        pn = "data/01/re01.sumocfg"
+
+        #每次输出都用不同的文件
+        fn = "Experiment_result/tripinfo"+str(i+1)+".xml"
+
         print(i+1,"begin at:",time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))   
         traci.start([sumoBinary, "-c", pn,"--tripinfo-output", fn])
         run(i,"ld")

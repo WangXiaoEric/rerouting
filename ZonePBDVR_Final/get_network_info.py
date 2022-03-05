@@ -24,6 +24,13 @@ from tensorflow.python.keras.models import load_model
 def GetRoadModel():
     Mod_dir = 'models/'
     NetName = "data/01/Tainan.net.xml"
+
+    abs_file = __file__
+    abs_dir = abs_file[:abs_file.rfind("\\")]
+    if len(os.listdir(abs_dir + "\\" + Mod_dir)) == 0:
+        print("GetRoadModel 方法 models 为空文件， 系统应该为第一次启动，数据采取热启动模式")
+        return None
+
     net = sumolib.net.readNet(NetName)
     edges = net.getEdges()
     Model_dict = {}
@@ -58,6 +65,14 @@ def MakePdAndDict(data_max,data_min,columns):
 def GetPastMeanZ():
     csvfile = 'data/meanZ/selected_'
     NetName = "data/01/Tainan.net.xml"
+
+    abs_file = __file__
+    abs_dir = abs_file[:abs_file.rfind("\\")]
+    if len(os.listdir(abs_dir + "\\data/meanZ")) == 0:
+        print("GetPastMeanZ data/meanZ/ 为空文件， 系统应该为第一次启动，数据采取热启动模式")
+        return None
+
+
     net = sumolib.net.readNet(NetName)
     edges = net.getEdges()
     MeanZ_dict = {}
@@ -130,6 +145,13 @@ def GetPastMeanZ():
 def GetPastMeanSpeed():
     csvfile = 'data/mean/'
     NetName = "data/01/Tainan.net.xml"
+
+    abs_file = __file__
+    abs_dir = abs_file[:abs_file.rfind("\\")]
+    if len(os.listdir(abs_dir + "\\" + csvfile)) == 0:
+        print("GetPastMeanSpeed data/mean/ 为空文件， 系统应该为第一次启动，数据采取热启动模式")
+        return None
+
     net = sumolib.net.readNet(NetName)
     edges = net.getEdges()
     MeanSpeed_dict = {}
@@ -140,6 +162,8 @@ def GetPastMeanSpeed():
         for idx , lane in enumerate(lanes):
             try:
                 if flag == 0:
+                    # '-111343195#2_0  lane ID示例'
+                    # '-111343195#2    edge ID示例'
                     mean = pd.read_csv(csvfile+lane.getID()+"_mean.csv")
                     mean = mean.drop(columns="interval")
                     mean = mean.drop(columns="avgspeed")
