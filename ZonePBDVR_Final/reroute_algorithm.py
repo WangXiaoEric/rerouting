@@ -9,8 +9,12 @@ import gc
 import pick_path as pp
 #from tensorflow.python.keras.models import load_model
 
-"""do Reroute"""
-def Reroute(RS_info, TL_info, conn_TL, paths, speed_result, ranked_vehicles, Coordinate, RSDensities, vehicleRS_dict, diff, same, RS_list,MeanSpeed_dict,MeanZ_dict,Model_dict):
+"""do Reroute
+RS_info, TL_info, conn_TL, paths, five_minu_loopd_avg_speed_result, ranked_vehicles,
+   Node_Coordinate, RSDensities, vehicleRS_dict, diff, same, all_path_RS_list, MeanSpeed_dict, MeanZ_dict, Model_dict
+"""
+def Reroute(RS_info, TL_info, conn_TL, paths, five_minu_loopd_avg_speed_result, ranked_vehicles, Node_Coordinate, RSDensities,
+            vehicleRS_dict, diff, same, RS_list, MeanSpeed_dict, MeanZ_dict, Model_dict):
     
     #print(footprint_dict)
     #mod_name = "data/model.h5"
@@ -33,8 +37,9 @@ def Reroute(RS_info, TL_info, conn_TL, paths, speed_result, ranked_vehicles, Coo
         
         
         """select the optimal route from k paths"""        
-        newPath,predicted_speeds = pp.pickPath(vehicle, K_paths, speed_result, RS_info, TL_info, conn_TL,\
-         Coordinate, RSDensities, vehicleRS_dict[vehicle]["RS_from"],vehicleRS_dict[vehicle]["RS_to"],Model_dict,predicted_speeds,MeanSpeed_dict,MeanZ_dict)
+        newPath, predicted_speeds = pp.pickPath(vehicle, K_paths, five_minu_loopd_avg_speed_result, RS_info, TL_info, conn_TL,
+                                               Node_Coordinate, RSDensities, vehicleRS_dict[vehicle]["RS_from"], vehicleRS_dict[vehicle]["RS_to"], Model_dict,
+                                               predicted_speeds, MeanSpeed_dict, MeanZ_dict)
         #return diff ,same
         getindex = original_route.index(current_edge)
         orig_path = original_route[getindex:]

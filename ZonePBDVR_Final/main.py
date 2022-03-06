@@ -107,20 +107,20 @@ def initialize():
             Lane_dict[lane.getID()] = {}
 
     alledgelist = traci.edge.getIDList()
-    mid_loop_detector_speed_info = {}
+    real_time_mid_loop_detector_speed_info = {}
     tensec_avgspeed_info = {}
-    loopd_avg_speed_result = {}
-    avgspeed_result = {}
-    edgeocc_dict = {}
+    five_minu_loopd_avg_speed_result = {}
+    five_minu_avgspeed_result = {}
+    edge_occ_dict = {}
     oneminspeed_dict = {}
     for EdgeID in alledgelist:
         
         if EdgeID.find(':') == -1:
-            mid_loop_detector_speed_info[EdgeID] = []
+            real_time_mid_loop_detector_speed_info[EdgeID] = []
             tensec_avgspeed_info[EdgeID] = []
             oneminspeed_dict[EdgeID] = []
-            loopd_avg_speed_result[EdgeID] = []
-            edgeocc_dict[EdgeID] = {}
+            five_minu_loopd_avg_speed_result[EdgeID] = []
+            edge_occ_dict[EdgeID] = {}
 
 
 
@@ -138,7 +138,7 @@ def initialize():
         for edge in edges:
             closestEdge , distance = edge
             #print(closestEdge)
-            EdgeID = str(closestEdge).split('id=')[1].split(' ')[0].replace('"',"")  
+            EdgeID = str(closestEdge).split('id=')[1].split(' ')[0].replace('"',"")
             #if EdgeID == "319713269#2":
             #    print("Yes")
             #print(EdgeID)
@@ -156,7 +156,7 @@ def initialize():
 
         
 
-    return Lane_dict , mid_loop_detector_speed_info , oneminspeed_dict , loopd_avg_speed_result , edgeocc_dict , Zone_dict , EdgeTOZone_dict , tensec_avgspeed_info , avgspeed_result
+    return Lane_dict , real_time_mid_loop_detector_speed_info , oneminspeed_dict , five_minu_loopd_avg_speed_result , edge_occ_dict , Zone_dict , EdgeTOZone_dict , tensec_avgspeed_info , five_minu_avgspeed_result
 
 
 def run(i,VR):
@@ -168,12 +168,13 @@ def run(i,VR):
 
     #Lane_dict - 道路loop检测器对象
     #speed_info - 以edgeID为字典的数据
-    Lane_dict , mid_loop_detector_speed_info , oneminspeed_dict , loopd_avg_speed_result , edgeocc_dict , Zone_dict , EdgeTOZone_dict , tensec_avgspeed_info , avgspeed_result = initialize()
+    Lane_dict , real_time_mid_loop_detector_speed_info , oneminspeed_dict , five_minu_loopd_avg_speed_result , edge_occ_dict , \
+    Zone_dict , EdgeTOZone_dict , tensec_avgspeed_info , five_minu_avgspeed_result = initialize()
 
     """get road network info."""    
     RS_info, con_info, TL_info, conn_TL = gni.getRNinfo()
-    RN = gni.loadedgeRN(RS_info, con_info)
-    Coordinate = gni.getCoordinate()
+    Road_Network = gni.loadedgeRN(RS_info, con_info)
+    Node_Coordinate = gni.getCoordinate()
     NetName = "data/01/Tainan.net.xml"
     net = sumolib.net.readNet(NetName)
     if not os.path.exists('CVtxt_result/'):
@@ -186,7 +187,7 @@ def run(i,VR):
         Lane_dict = GetMid(Lane_dict)
         Lane_dict = GetEnd(Lane_dict)
         #每一步骤记录Mid_ detector的速度信息  后面需要关注一下speed_info的速度情况；
-        for EdgeID, speed_list in mid_loop_detector_speed_info.items():
+        for EdgeID, speed_list in real_time_mid_loop_detector_speed_info.items():
             count = 0
             instspeed = 0
             total_speed = 0
@@ -220,6 +221,7 @@ def run(i,VR):
                 speed_list[:] = []
         #'''
         if SimTime %300 == 0:
+        # if SimTime %100 == 0:
             #''' 执行完毕之后一分钟字典oneminspeed_dict清空
             for EdgeID, speed_list in oneminspeed_dict.items():
                 if len(speed_list) !=5:
@@ -227,20 +229,20 @@ def run(i,VR):
                     exit(0)
                 temp_list = speed_list
                 tempAvgSpeed = np.mean(temp_list)
-                avgspeed_result[EdgeID] = tempAvgSpeed
+                five_minu_avgspeed_result[EdgeID] = tempAvgSpeed
                 speed_list[:] = []
             #'''
 
-            for EdgeID, speed_list in mid_loop_detector_speed_info.items():
+            for EdgeID, speed_list in real_time_mid_loop_detector_speed_info.items():
                 temp_list = speed_list
                 if not temp_list:
-                    if avgspeed_result[EdgeID] >= 11:
-                        loopd_avg_speed_result[EdgeID].append(13.89)
+                    if five_minu_avgspeed_result[EdgeID] >= 11:
+                        five_minu_loopd_avg_speed_result[EdgeID].append(13.89)
                     else:
-                        loopd_avg_speed_result[EdgeID].append(0)
+                        five_minu_loopd_avg_speed_result[EdgeID].append(0)
                 else:
                     tempAvgSpeed = np.mean(temp_list)
-                    loopd_avg_speed_result[EdgeID].append(tempAvgSpeed)
+                    five_minu_loopd_avg_speed_result[EdgeID].append(tempAvgSpeed)
                 speed_list[:] = []
                 
             diff = 0
@@ -250,8 +252,9 @@ def run(i,VR):
             log += "SUMO Time: "+str(SimTime)
 
             time_start = time.time()
-            RSDensities = tcp.updateRSDensities(RS_info, RSNumber)              
-            congestedRS, content,edgeocc_dict = tcp.detectCongestion(RSDensities, con_threshold,edgeocc_dict)
+            #获取上一step(即当前)道路车辆数量
+            RSDensities = tcp.updateRSDensities(RS_info)
+            congestedRS, occ_vel_content, edge_occ_dict = tcp.detectCongestion(RSDensities, con_threshold, edge_occ_dict)
             time_detect = time.time()
             log += " ,detect time: "+str( time_detect-time_start )
 
@@ -263,33 +266,36 @@ def run(i,VR):
                 vehicleRS_dict = {}
                 selected_vehicles = []
                 log += " ,Congestion Road and upstream_level: "
-                for RS in congestedRS:
+                for rs_edge_id in congestedRS:
 
-                    upstream_level = round(np.exp(5.37*congestedRS[RS]-3.07))
+                    upstream_level = round(np.exp(5.37*congestedRS[rs_edge_id]-3.07))
                     #print("upstream_level= ",upstream_level)
-                    log +=  RS+"+"+ str(upstream_level)+" "
-                    RS_from = RS_info[RS][0]
-                    RS_to = RS_info[RS][1]
+                    log +=  rs_edge_id+"+"+ str(upstream_level)+" "
+                    RS_from = RS_info[rs_edge_id][0]
+                    RS_to = RS_info[rs_edge_id][1]
  
-                    """select affected vehicles"""
-                    level_dictionary = vs.getAffectedRSviaedge(RS, RN, upstream_level, RS_info, Coordinate)
-                    veh_list , vehicleRS_dict = vs.selectVehicles(RS, level_dictionary, vehicleRS_dict, RS_from, RS_to)
+                    """select affected vehicles 根据每个路段找到Up stream level"""
+                    level_dictionary = vs.getAffectedRSviaedge(rs_edge_id, Road_Network, upstream_level, RS_info, Node_Coordinate)
+                    #找到每一个路段所对应的
+                    veh_list , vehicleRS_dict = vs.selectVehicles(rs_edge_id, level_dictionary, vehicleRS_dict, RS_from, RS_to)
                     selected_vehicles += veh_list 
 
-                #delete duplicated element          
+                #delete duplicated element
                 selected_vehicles = sorted(set(selected_vehicles), key = selected_vehicles.index)
-                vehicleRS_dict = vr.ChooseNearCongRoad(selected_vehicles, vehicleRS_dict, RS_info, Coordinate)     
+                #找到车辆最近的拥塞路段
+                vehicleRS_dict = vr.ChooseNearCongRoad(selected_vehicles, vehicleRS_dict, RS_info, Node_Coordinate)
                 """"rank the vehicles"""
                 if VR == "ld":
-                    ranked_vehicles = vr.rankVehicles(selected_vehicles, RS_info)  
+                    ranked_vehicles = vr.rankVehicles(selected_vehicles, RS_info)
                     
-                RN = ra.SetGraphWeight(RN , RSDensities , con_info,Zone_dict)
+                Road_Network = ra.SetGraphWeight(Road_Network , RSDensities , con_info, Zone_dict)
                 ODpairs = ra.getODpairs(ranked_vehicles)
-                paths = ra.getAllKSP(RN, ODpairs, K)
-                RS_list = ra.getAllRS(paths)
+                paths = ra.getAllKSP(Road_Network, ODpairs, K)
+                all_path_RS_list = ra.getAllRS(paths)
                 
                 """"start re-routing""" 
-                diff , same = ra.Reroute(RS_info, TL_info, conn_TL, paths, loopd_avg_speed_result, ranked_vehicles, Coordinate, RSDensities, vehicleRS_dict, diff, same, RS_list,MeanSpeed_dict,MeanZ_dict,Model_dict)
+                diff , same = ra.Reroute(RS_info, TL_info, conn_TL, paths, five_minu_loopd_avg_speed_result, ranked_vehicles,
+                                         Node_Coordinate, RSDensities, vehicleRS_dict, diff, same, all_path_RS_list, MeanSpeed_dict, MeanZ_dict, Model_dict)
                 time_end = time.time()
                 log += ",Reroute time: "+str( time_end - time_detect)
                 gc.collect()
@@ -333,9 +339,9 @@ def run(i,VR):
     if not os.path.exists('occtxt_result/out'+str(i)):
         os.makedirs('occtxt_result/out'+str(i))
 
-    for edgeid in edgeocc_dict.keys():
+    for edgeid in edge_occ_dict.keys():
         wf = open("occtxt_result/out"+str(i)+"/"+edgeid+".txt" , mode='w')    
-        for Simtime,info in edgeocc_dict[edgeid].items():
+        for Simtime,info in edge_occ_dict[edgeid].items():
             line = str(Simtime)+","+info+"\n"
             wf.write(line)
         wf.close()

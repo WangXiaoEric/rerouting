@@ -5,7 +5,7 @@ import math
 
 """the speed prediction model: estimate the predicted speed for target RS"""
 #def getSpeed(RS, RS_Kjam, speed_result, vehicle, footprint, current_time, depart_time):
-def getSpeed(RS, speed_result, current_time, depart_time, model, predicted_speed,MeanSpeed,MeanZ,Bd):
+def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, model, predicted_speed,MeanSpeed,MeanZ,Bd):
     # __5___10----
     if model == 0:
         pred = 13.89
@@ -13,7 +13,7 @@ def getSpeed(RS, speed_result, current_time, depart_time, model, predicted_speed
         
     PastTime = 3
     pred_num = int((depart_time - current_time)/300) + 1
-    temp_pastspeed_list = speed_result[RS]
+    temp_pastspeed_list = five_minu_loopd_avg_speed_result[RS]
     pred_len = len(predicted_speed[RS])
     maxspeed = 13.89
 

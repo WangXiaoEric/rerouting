@@ -25,7 +25,7 @@ import traci
 update densities of every RS in road network
 RS_info = {RS_id:[from(node),to(node),lenght,lane_number]
 """
-def updateRSDensities(RS_info, RSNumber):
+def updateRSDensities(RS_info):
     
     #VehicleNumber = [[0]*5 for i in range(RSNumber)]
     #i = 0
@@ -54,27 +54,27 @@ def updateRSDensities(RS_info, RSNumber):
     
     return VehicleNumber
 
-def detectCongestion(RSDensities, con_threshold,edgeocc_dict):
+def detectCongestion(RSDensities, con_threshold, edge_occ_dict):
     
     congestedRS = {}
-    content = {}
+    occ_vel_content = {}
     SimTime = int(traci.simulation.getTime())
-    for RS in RSDensities:
+    for rs_edge_id in RSDensities:
         
         """ get mean speed """
-        mean_speed = float(traci.edge.getLastStepMeanSpeed(RS))
+        mean_speed = float(traci.edge.getLastStepMeanSpeed(rs_edge_id))
         #print(mean_speed )
         """ get speed limit """
-        speed_limit = float(traci.lane.getMaxSpeed( RSDensities[RS]["Lane_ID"] ))
+        speed_limit = float(traci.lane.getMaxSpeed( RSDensities[rs_edge_id]["Lane_ID"] ))
         
         """ N_max = Length(RS)*Lane_num(RS)/(avg vehicle length + min gap between vehicles) """
-        N_max = float(RSDensities[RS]["Length"])*float(RSDensities[RS]["Lane_Num"])/(5.0+2.5)
+        N_max = float(RSDensities[rs_edge_id]["Length"])*float(RSDensities[rs_edge_id]["Lane_Num"])/(5.0+2.5)
         
         """occupancy"""
-        occ = float(RSDensities[RS]["Veh_Num"])/N_max
+        occ = float(RSDensities[rs_edge_id]["Veh_Num"])/N_max
         
-        line = str(occ)+","+str(float(RSDensities[RS]["Veh_Num"]))+","+str(float(RSDensities[RS]["Length"]))+","+str(float(RSDensities[RS]["Lane_Num"]))
-        edgeocc_dict[RS][SimTime] = line
+        line = str(occ)+","+str(float(RSDensities[rs_edge_id]["Veh_Num"]))+","+str(float(RSDensities[rs_edge_id]["Length"]))+","+str(float(RSDensities[rs_edge_id]["Lane_Num"]))
+        edge_occ_dict[rs_edge_id][SimTime] = line
         """velocity"""
         vel = 1-mean_speed/speed_limit
         if occ > 1:
@@ -85,17 +85,18 @@ def detectCongestion(RSDensities, con_threshold,edgeocc_dict):
         """ current information N(RS)/N_max(RS)"""
         current_info = 0.5*(occ + vel)
         
-        content.update({RS[0]:[occ, vel]})
-        
+        # occ_vel_content.update({rs_edge_id[0]:[occ, vel]})
+        occ_vel_content.update({rs_edge_id:[occ, vel]})
+
         if occ > con_threshold and vel > con_threshold:
             #print("---------------------")
             #traci.edge.getStreetName(RS)
             #print(float(RSDensities[RS]["Veh_Num"]))
             #print(mean_speed)
             #print("---------------------")
-            congestedRS.update({RS:current_info})
+            congestedRS.update({rs_edge_id:current_info})
             
-    return congestedRS, content, edgeocc_dict
+    return congestedRS, occ_vel_content, edge_occ_dict
 
 def log_entropy(EdgeTOZone_dict,i,ZoneNum,RSDensities):
     default_stdout = sys.stdout

@@ -3,11 +3,13 @@ import traci
 import scipy.stats as st
 import numpy as np
 from Prediction_model import prediction_model as pm
+import random
 
 """   
 pick the optimal route from several candidates
 """
-def pickPath(vehicle, K_paths, speed_result, RS_info, TL_info, conn_TL, Coordinate, RSDensities, RS_from, RS_to, Model_dict, predicted_speeds,MeanSpeed_dict,MeanZ_dict):
+def pickPath(vehicle, K_paths, five_minu_loopd_avg_speed_result, RS_info,
+             TL_info, conn_TL, Node_Coordinate, RSDensities, RS_from, RS_to, Model_dict, predicted_speeds, MeanSpeed_dict, MeanZ_dict):
     
     newPath = []
     travel_time = []
@@ -23,18 +25,23 @@ def pickPath(vehicle, K_paths, speed_result, RS_info, TL_info, conn_TL, Coordina
         total_ro = 0
         depart_time = current_time
         for idx, RS in enumerate(path):
-            
-            
-            
+
             #get RS_Length and RS_Kjam
             RS_Length = float(RS_info[RS][2])
 
             #first RS: minus the length that already passed on the first RS
             if idx == 0:
                 RS_Length = RS_Length - traci.vehicle.getLanePosition(vehicle)
-            
-            pred_avg , predicted_speeds = pm.getSpeed(RS, speed_result, current_time, depart_time, Model_dict[RS], predicted_speeds,MeanSpeed_dict[RS],MeanZ_dict[RS],Bd)
-            RS_passing_time = RS_Length / pred_avg#predicted_speed
+
+            #热启动 先临时给初始数值
+            if Model_dict == None:
+                # pred_avg = traci.edge.getLastStepMeanSpeed(RS)
+                pred_avg = random.uniform(0.1, 13.89)
+            else:
+                #TODO 这部分如果是None该怎么办 再用预测数值
+                pred_avg , predicted_speeds = pm.getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, Model_dict[RS], predicted_speeds, MeanSpeed_dict[RS], MeanZ_dict[RS], Bd)
+
+            RS_passing_time = RS_Length / pred_avg #predicted_speed
 
             tt = tt + RS_passing_time
             depart_time += RS_passing_time

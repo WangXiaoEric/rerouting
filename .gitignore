@@ -1,4 +1,6 @@
 # Object file
+\ZonePBDVR_Final\log_result\
+\**\*.txt
 *.o
 *.doc
 # Ada Library Information
@@ -11,3 +13,4 @@
 idea/
 *.xml
 .idea/misc.xml
+
