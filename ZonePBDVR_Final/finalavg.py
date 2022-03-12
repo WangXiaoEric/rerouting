@@ -16,7 +16,7 @@ else:
 
 from sumolib import checkBinary  # noqa
 import sumolib
-def AverageSpeedAllData(inputdir,outputdir,lane,filenum):
+def AverageSpeedAllData(inputdir, outputdir, lane, filenum):
 
     total = 0
     flag =0
@@ -135,7 +135,7 @@ def AverageZAllData(inputdir,outputdir,lane,filenum):
             if len(tempSelected_data) >= sel_min:
                 Selected_data += tempSelected_data[:sel_min]
 
-            for i in range(sel_min,len(tempSelected_data) ):
+            for i in range(sel_min,len(tempSelected_data)):
                 sel_total_df.loc[i] += tempSelected_data.iloc[i]
                 sel_num_dict[i] += 1
             total += 1
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         os.makedirs(outputZdir)
 
     for lane in Lane_list:
-        AverageSpeedAllData(inputdir,outputdir,lane,5)
-        AverageZAllData(inputZdir,outputZdir,lane,5)
+        AverageSpeedAllData(inputdir, outputdir, lane, 5)
+        AverageZAllData(inputZdir, outputZdir, lane, 5)
     
 

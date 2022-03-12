@@ -5,7 +5,20 @@ import math
 
 """the speed prediction model: estimate the predicted speed for target RS"""
 #def getSpeed(RS, RS_Kjam, speed_result, vehicle, footprint, current_time, depart_time):
-def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, model, predicted_speed,MeanSpeed,MeanZ,Bd):
+def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, model, predicted_speed, MeanSpeed, MeanZ, Bd):
+    """
+
+    :param RS:
+    :param five_minu_loopd_avg_speed_result:
+    :param current_time:
+    :param depart_time:
+    :param model:
+    :param predicted_speed: 已經LSTM預測過的緩存速度
+    :param MeanSpeed:
+    :param MeanZ:
+    :param Bd:
+    :return:
+    """
     # __5___10----
     if model == 0:
         pred = 13.89
@@ -30,7 +43,7 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
         return pred_inst , predicted_speed
     '''
        
-    
+    #pred_len 緩存已經LSTM預測過的數量
     if pred_len >= pred_num: #Not need to predict again
         try:
             pred_inst = predicted_speed[RS][pred_num-1]

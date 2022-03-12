@@ -37,8 +37,8 @@ def build_data(data, past, shift, x, y):
     return x , y
 def count(lane , x , y):
     data = pd.DataFrame(columns=["inst_speed"])
-    end = 45
-    start = 5
+    end = 1
+    start = 0
     inputdir = 'interavg_result/out'
     meanfolder_path = 'finalavg_result'
     
@@ -90,7 +90,7 @@ def count(lane , x , y):
                     exit(0)
                 
             except Exception as e:
-                #print(e)
+                print(e)
                 return x , y
                 
     return x , y
@@ -189,6 +189,7 @@ if __name__ == "__main__":
             exit(0)
         
         model = Sequential()
+        print(x.shape)
         model.add(LSTM(64, input_length=x.shape[1], input_dim=x.shape[2], return_sequences=True))
         model.add(Dropout(0.3))
         model.add(LSTM(64, return_sequences=True))

@@ -16,7 +16,7 @@ def pickPath(vehicle, K_paths, five_minu_loopd_avg_speed_result, RS_info,
     path_cost = {}
     #Returns the current simulation time in s
     current_time = traci.simulation.getTime()
-    # 張耀元部分
+    # 張耀元部分  累積概率密度
     Bd = st.norm.cdf(traci.vehicle.getSpeedFactor(vehicle), loc = 0.95, scale = 0.1)
     for path in K_paths:
         
@@ -33,12 +33,12 @@ def pickPath(vehicle, K_paths, five_minu_loopd_avg_speed_result, RS_info,
             if idx == 0:
                 RS_Length = RS_Length - traci.vehicle.getLanePosition(vehicle)
 
-            #热启动 先临时给初始数值
+            #熱啟動 先臨時給初始數值
             if Model_dict == None:
                 # pred_avg = traci.edge.getLastStepMeanSpeed(RS)
                 pred_avg = random.uniform(0.1, 13.89)
             else:
-                #TODO 这部分如果是None该怎么办 再用预测数值
+                #TODO 这部分如果是None该怎么办 再用预测数值 depart_time其實為目標預測時間
                 pred_avg , predicted_speeds = pm.getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, Model_dict[RS], predicted_speeds, MeanSpeed_dict[RS], MeanZ_dict[RS], Bd)
 
             RS_passing_time = RS_Length / pred_avg #predicted_speed

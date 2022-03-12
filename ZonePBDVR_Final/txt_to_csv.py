@@ -17,14 +17,10 @@ else:
 from sumolib import checkBinary  # noqa
 import sumolib
 
-
-
-
-
 if __name__ == "__main__":
     parser = OptionParser()#parser = OptionParser()
-    parser.add_option("-s", "--start", dest="start", type="int" ,default="-1", help="The start used to run SUMO start from txt_result/outx")
-    parser.add_option("-e", "--end", dest="end", type="int" ,default="-1", help="The end used to run SUMO end at txt_result/outx")
+    parser.add_option("-s", "--start", dest="start", type="int" ,default="0", help="The start used to run SUMO start from txt_result/outx")
+    parser.add_option("-e", "--end", dest="end", type="int" ,default="1", help="The end used to run SUMO end at txt_result/outx")
     (options, args) = parser.parse_args()
     start = options.start
     end = options.end
@@ -39,7 +35,7 @@ if __name__ == "__main__":
         for lane in lanes:
             Lane_dict[lane.getID()] = lane.getLength()
     #'''
-    #Lane_dict["-111343195#2_0"] = 5
+    # Lane_dict["24452786#0_0"] = 117.23
     for i in range(start,end):
         if not os.path.exists('csv_result/out'+str(i)):
             os.makedirs('csv_result/out'+str(i))
@@ -60,7 +56,6 @@ if __name__ == "__main__":
                             if veh_entry <= veh_exit:
                               newrow = {"entry":veh_entry ,"mid":veh_midentry ,"instspeed":veh_inst , "exit": veh_exit,"length":lane_len}
                             else:
-                              
                               newrow = {"entry":veh_exit ,"mid":veh_midentry ,"inst_speed":veh_inst ,"exit": veh_entry,"length":lane_len}
                             data = data.append(newrow, ignore_index=True)
                     #print(data["exit"])

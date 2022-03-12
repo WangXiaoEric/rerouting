@@ -326,7 +326,7 @@ def run(i,VR):
     for laneid in Lane_dict.keys():
         if len(Lane_dict[laneid]) == 0:
             continue
-        wf = open("txt_result/out"+str(i)+"/"+laneid+".txt" , mode='w')    
+        wf = open("txt_result/out"+str(i)+"/"+laneid+".txt" , mode='w') #mode='w' 或者 'a'
         for veh_id in Lane_dict[laneid]:
             try:
               line = str(veh_id)+","+str(Lane_dict[laneid][veh_id]["veh_entry"])+","+str(Lane_dict[laneid][veh_id]["veh_midentry"])+","+\
@@ -345,7 +345,13 @@ def run(i,VR):
             line = str(Simtime)+","+info+"\n"
             wf.write(line)
         wf.close()
-    
+
+    #記錄最終的SimTime,用來補充數據
+    summary = open("txt_result/out" + str(i) + "/summary.txt", mode='w')
+    print("SimTime is " + str(SimTime))
+    summary.write(str(SimTime))
+    summary.close()
+
     gc.collect()
     
 
@@ -356,7 +362,7 @@ if __name__ == "__main__":
     # python3 main - s 0 - e 45
     # self loop. we want to run only once case, and train Driver-Behavour and LSTM
     parser.add_option("-s", "--start", dest="start",type="int" , default="0", help="The start used to run SUMO start from tripinfox.xml")
-    parser.add_option("-e", "--end", dest="end",type="int" , default="100", help="The end used to run SUMO end at tripinfox.xml")
+    parser.add_option("-e", "--end", dest="end",type="int" , default="1", help="The end used to run SUMO end at tripinfox.xml")
     parser.add_option("--nogui", action="store_true",default=False, help="run the commandline version of sumo")
     (options, args) = parser.parse_args()
     start = options.start
@@ -383,18 +389,18 @@ if __name__ == "__main__":
         #每次输出都用不同的文件
         fn = "Experiment_result/tripinfo"+str(i+1)+".xml"
 
-        print(i+1,"begin at:",time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))   
+        print(i+1,"begin at:",time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
         traci.start([sumoBinary, "-c", pn,"--tripinfo-output", fn])
         run(i,"ld")
         print("finish at:",time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
         gc.collect()
     gc.collect()
 
-    os.system("python3 txt_to_csv.py -s "+str(start)+" -e "+str(end))
-    os.system("python3 vehavg_inst.py -s "+str(start)+" -e "+str(end))
+    os.system("python txt_to_csv.py -s "+str(start)+" -e "+str(end))
+    os.system("python vehavg_inst_lstm.py -s "+str(start)+" -e "+str(end))
     if start == 0:
         os.system("python3 finalavg.py")
-        os.system("python3 train.py")
+        # os.system("python3 train.py")
 
 
 

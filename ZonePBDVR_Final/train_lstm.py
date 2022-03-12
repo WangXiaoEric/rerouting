@@ -11,7 +11,10 @@ import pandas as pd
 import numpy as np
 import pandas as pd
 import numpy as np
+import tensorflow
+
 from tensorflow.keras.models import Sequential
+
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, LSTM, TimeDistributed, RepeatVector
 #from tensorflow.keras.layers.normalization import BatchNormalization
 from tensorflow.keras.optimizers import Adam
@@ -19,7 +22,16 @@ from tensorflow.keras.optimizers import SGD
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-import matplotlib.pyplot as plt
+
+os.environ["CUDA_VISIBLE_DEVICES"] = '-1'   #0指定第一块GPU可用  -1为CPU
+# config = tensorflow.compat.v1.ConfigProto()
+# config.gpu_options.per_process_gpu_memory_fraction = 0.5  # 程序最多只能占用指定gpu50%的显存
+# config.gpu_options.allow_growth = True      #程序按需申请内存
+# sess = tensorflow.Session(config = config)
+
+
+
+# import matplotlib.pyplot as plt
 import os
 import math
 if 'SUMO_HOME' in os.environ:
@@ -35,34 +47,41 @@ def build_data(data, past, shift, x, y):
         x.append(np.array(data.iloc[i:i+past]))#['inst_speed']
         y.append(np.array(data.iloc[i+past]))#['inst_speed']
     return x , y
+
+def build_data_batch(data, past, shift, x, y, batch):
+    """
+    数据不够时,循环使用当前数据, batch为循环使用次数
+    :param data:
+    :param past:
+    :param shift:
+    :param x:
+    :param y:
+    :param batch:
+    :return:
+    """
+    for temp in range(0, batch):
+        for i in range(0, data.shape[0]-past, shift):
+            x.append(np.array(data.iloc[i:i+past]))#['inst_speed']
+            y.append(np.array(data.iloc[i+past]))#['inst_speed']
+    return x , y
 def count(lane , x , y):
     data = pd.DataFrame(columns=["inst_speed"])
     end = 1
     start = 0
     inputdir = 'interavg_result/out'
-    meanfolder_path = 'finalavg_result'
+    # meanfolder_path = 'finalavg_result'
     
     for i in range(start,end):
-            try: #���ǹD�� �t�׳���0 �]���N���h��
+            try:
                 data = pd.read_csv(inputdir+str(i)+"/"+lane+".csv")
                 data = data.drop(columns="interval")
                 data = data.drop(columns="avgspeed")
-                mean = pd.read_csv(meanfolder_path+"/"+lane+"_mean.csv")
-                mean = mean.drop(columns="interval")
+
                 data = data.round(3)
-                
-                if len(data) > len(mean):
-                    data["instspeed"][:len(mean)] -= mean["instspeed"]
-                else:
-                    data["instspeed"] -= mean["instspeed"]
-                    
+
                 if data["instspeed"].isnull().values.any():
                     print(inputdir+str(i)+"/"+lane+".csv")
                     print("up")
-                    exit(0)
-                if mean["instspeed"].isnull().values.any():
-                    print(meanfolder_path+"/"+lane+"_mean.csv")
-                    print("up2")
                     exit(0)
                 count_data = np.isinf(data).values.sum()
                 if  count_data >0:
@@ -71,16 +90,9 @@ def count(lane , x , y):
                         print(b)
                     print(inputdir+str(i)+"/"+lane+".csv")
                     exit(0)
-                count_mean = np.isinf(mean).values.sum()
-                if  count_mean>0:
-                    print("inf2")
-                    print(meanfolder_path+"/"+lane+"_mean.csv")
-                    exit(0)
-                
-                #print(data)
                
                 
-                x, y = build_data(data, 3, 1, x, y)
+                x, y = build_data_batch(data, 12, 1, x, y, 5)
                 #x = np.array(data)
                 if np.any(np.isinf(x)):
                     print(inputdir+str(i)+"/"+lane+".csv")
@@ -90,71 +102,11 @@ def count(lane , x , y):
                     exit(0)
                 
             except Exception as e:
-                #print(e)
+                print(e)
                 return x , y
                 
     return x , y
-'''
-def countall(lane , x , y):
-    data = pd.DataFrame(columns=["inst_speed"])
-    end = 6
-    start = 5
-    inputdir = 'interavg_result/out'
-    meanfolder_path = 'finalavg_result'
-    
-    for i in range(start,end):
-            try: #���ǹD�� �t�׳���0 �]���N���h��
-                data = pd.read_csv(inputdir+str(i)+"/"+lane+".csv")
-                data = data.drop(columns="interval")
-                data = data.drop(columns="avgspeed")
-                mean = pd.read_csv(meanfolder_path+"/"+lane+"_mean.csv")
-                mean = mean.drop(columns="interval")
-                data = data.round(3)
-                
-                if len(data) > len(mean):
-                    data["instspeed"][:len(mean)] -= mean["instspeed"]
-                else:
-                    data["instspeed"] -= mean["instspeed"]
-                    
-                if data["instspeed"].isnull().values.any():
-                    print(inputdir+str(i)+"/"+lane+".csv")
-                    print("up")
-                    exit(0)
-                if mean["instspeed"].isnull().values.any():
-                    print(meanfolder_path+"/"+lane+"_mean.csv")
-                    print("up2")
-                    exit(0)
-                count_data = np.isinf(data).values.sum()
-                if  count_data >0:
-                    print("inf1")
-                    for b in data["instspeed"].tolist():
-                        print(b)
-                    print(inputdir+str(i)+"/"+lane+".csv")
-                    exit(0)
-                count_mean = np.isinf(mean).values.sum()
-                if  count_mean>0:
-                    print("inf2")
-                    print(meanfolder_path+"/"+lane+"_mean.csv")
-                    exit(0)
-                
-                #print(data)
-               
-                
-                x, y = build_data(data, 3, 1, x, y)
-                #x = np.array(data)
-                if np.any(np.isinf(x)):
-                    print(inputdir+str(i)+"/"+lane+".csv")
-                    exit(0)
-                if np.any(np.isnan(x)):
-                    print(inputdir+str(i)+"/"+lane+".csv")
-                    exit(0)
-                
-            except Exception as e:
-                #print(e)
-                return x , y
-                
-    return x , y
-'''
+
 
 if __name__ == "__main__":
     outputdir = "models"
@@ -171,8 +123,7 @@ if __name__ == "__main__":
         lanes = edge.getLanes()
         for lane in lanes:
             x , y = count(lane.getID() , x , y)
-        # if len(x) <= 100 or len(y) <=100:
-        if len(x) <= 10 or len(y) <= 10:
+        if len(x) <= 100 or len(y) <=100:
             continue
         
         
