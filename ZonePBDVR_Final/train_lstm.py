@@ -103,7 +103,7 @@ def count(lane , x , y):
                 
             except Exception as e:
                 print(e)
-                return x , y
+                # return x , y
                 
     return x , y
 

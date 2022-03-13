@@ -2,7 +2,8 @@
 import traci
 import scipy.stats as st
 import numpy as np
-from Prediction_model import prediction_model as pm
+# from Prediction_model import prediction_model as pm
+from Prediction_model import prediction_model_without_mean as pm
 import random
 
 """   

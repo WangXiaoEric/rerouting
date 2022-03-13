@@ -21,8 +21,8 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
     """
     """<--comment"""
     #  平均速度 =  (歷史瞬時速度 + LSTM誤差)-> 瞬時轉平均
-    # speed_result: 儲存SUMO從開始到結束，每5分鐘的瞬時速度
-    # predicted_speed: 將LSTM已經預測的誤差緩存起來
+    # five_minu_loopd_avg_speed_result: 儲存SUMO從開始到結束，每5分鐘的瞬時速度
+    # predicted_speed: 將LSTM已經預測的誤差緩存起來  - 注意这点略有所不同
     # pred_num: 當前車輛需使用LSTM預測次數
     # pred_len: 目前RS已經緩存的誤差數量
     # maxspeed(道路速限): 13.89(m/s) == 50(km/h) SUMO的速度單位是(m/s)

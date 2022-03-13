@@ -29,6 +29,12 @@ import xml.etree.cElementTree as ET
 #import json
 
 #讀取summary文件
-summary = open('txt_result/out0/summary.txt', 'r')
-sime_time = int(summary.read())
-print(sime_time)
+X = [i for i in range(8)]
+
+p = X[-12:]
+
+
+
+
+print(X)
+print(p)
