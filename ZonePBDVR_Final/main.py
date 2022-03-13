@@ -27,7 +27,7 @@ import reroute_algorithm as ra
 import xml.etree.cElementTree as ET
 #from tensorflow.python.keras.models import load_model
 #import json
-
+os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
 RSNumber = 561
 #rerouting_vehicle = {}
 
@@ -397,10 +397,13 @@ if __name__ == "__main__":
     gc.collect()
 
     os.system("python txt_to_csv.py -s "+str(start)+" -e "+str(end))
-    os.system("python vehavg_inst_lstm.py -s "+str(start)+" -e "+str(end))
+    os.system("python veh_avg_inst_lstm.py -s "+str(start)+" -e "+str(end))
     if start == 0:
-        os.system("python3 finalavg.py")
-        # os.system("python3 train.py")
+        # 此命令为不同车流数据取前5次均值
+        # os.system("python3 finalavg.py")
+        os.system("python3 train_lstm.py")
+        # finalavg_result 重新命名為 mean , finalZ_result 重新命名為 meanZ 放入data 資料夾
+        os.system("move_mean_files.py")
 
 
 

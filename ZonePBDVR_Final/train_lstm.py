@@ -92,7 +92,7 @@ def count(lane , x , y):
                     exit(0)
                
                 
-                x, y = build_data_batch(data, 12, 1, x, y, 5)
+                x, y = build_data_batch(data, 12, 1, x, y, data_batch_size)
                 #x = np.array(data)
                 if np.any(np.isinf(x)):
                     print(inputdir+str(i)+"/"+lane+".csv")
@@ -116,7 +116,10 @@ if __name__ == "__main__":
     net = sumolib.net.readNet(NetName)
     edges = net.getEdges()
     #LaneList = []
-    
+
+    data_batch_size = 15
+    epochs = 60
+
     for edge in edges:
         x = []
         y = []
@@ -153,10 +156,20 @@ if __name__ == "__main__":
         model.compile(loss = 'mse', optimizer = 'adam')#'adam' 'SGD'
         model.summary()
 
-        callback = EarlyStopping(monitor="loss", patience=10, verbose=1, mode="auto")
-        history = model.fit(X_train, y_train, validation_data=(X_valid,y_valid), epochs = 50, callbacks=[callback])
+        # callback = EarlyStopping(monitor="loss", patience=10, verbose=1, mode="auto")
+        # history = model.fit(X_train, y_train, validation_data=(X_valid,y_valid), epochs = 50, callbacks=[callback])
+        # callback = EarlyStopping(monitor="loss", patience=10, verbose=1, mode="auto")
+
+        history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), epochs=epochs)
+
+
         mode_name = edge.getID()+"_model.h5"
         model.save("models/"+mode_name)
+
+        summary = open("models/summary.txt", mode='a')
+        line = mode_name + " loss is: " + str(history.history['loss'][epochs-1]) + "\n"
+        summary.write(line)
+        summary.close()
         
     '''
     LaneList = []

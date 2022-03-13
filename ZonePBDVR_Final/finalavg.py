@@ -24,8 +24,9 @@ def AverageSpeedAllData(inputdir, outputdir, lane, filenum):
         try:
             tempAvg_data = pd.read_csv(inputdir+str(outeridx)+"/"+lane+".csv")
             total += 1
-        except:
+        except Exception as e:
             #print("Average File "+lane+".csv not exist")
+            print(e)
             continue
         if flag ==0:
             

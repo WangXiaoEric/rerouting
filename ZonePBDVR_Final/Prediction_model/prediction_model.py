@@ -19,6 +19,15 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
     :param Bd:
     :return:
     """
+    """<--comment"""
+    #  平均速度 =  (歷史瞬時速度 + LSTM誤差)-> 瞬時轉平均
+    # speed_result: 儲存SUMO從開始到結束，每5分鐘的瞬時速度
+    # predicted_speed: 將LSTM已經預測的誤差緩存起來
+    # pred_num: 當前車輛需使用LSTM預測次數
+    # pred_len: 目前RS已經緩存的誤差數量
+    # maxspeed(道路速限): 13.89(m/s) == 50(km/h) SUMO的速度單位是(m/s)
+    """comment-->"""
+
     # __5___10----
     if model == 0:
         pred = 13.89
@@ -34,8 +43,12 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
     #    print("temp_pastspeed_list is changed")
     #    exit(0)
 
+    """<--comment"""
+    # predtime 可刪除
     predtime = 32
+    # Pred_limit 最多預測6次
     Pred_limit = 6
+    """comment-->"""
 
     '''
     if pred_len >= len(MeanSpeed) - 3 and  pred_num >=pred_len:
@@ -44,17 +57,28 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
     '''
        
     #pred_len 緩存已經LSTM預測過的數量
+    """<--comment"""
+    # 緩存中已經有需要的誤差，進入if
+    """comment-->"""
     if pred_len >= pred_num: #Not need to predict again
         try:
             pred_inst = predicted_speed[RS][pred_num-1]
             lastidx = len(temp_pastspeed_list) + pred_num -1
+            """<--comment"""
+            # 此道路沒有歷史瞬時速度(沒有車子通過) pred = 速限 + 預測的誤差
+            """comment-->"""
             if len(MeanSpeed) == 0:
                 pred = pred_inst + maxspeed
             else:
-
+                """<--comment"""
+                # 超出所儲存的歷史瞬時速度的數量，pred = 速限速度
+                """comment-->"""
                 if lastidx > len(MeanSpeed) - 1: # over list length
                     pred = maxspeed 
                 else:
+                    """<--comment"""
+                    # 超出所儲存的Zmax、Zmin的數量，pred = 速限速度
+                    """comment-->"""
                     if len(MeanZ) == 0  or lastidx > len(MeanZ) - 1 or MeanZ["Zmax"][lastidx] == 0:
                         pred = maxspeed 
                     else:
@@ -63,18 +87,30 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
 
             if pred <= 0:
                 pred = 0.01
-            
+
+            """<--comment"""
+            # speedFactor="normc(0.95,0.10,0.60,1.50)
+            # SUMO官網定義 vehicle speed = min( maxSpeed(官網:最高車速55.55(m/s)), speedFactor * speedLimit(速限13.89，我們定義))
+            # 所以整個路網 最低車速 = 13.89 x 0.6 。最高車速 = 13.89 x 1.5
+            # 但是車輛難以在此路網達到最高速，故以15回傳
+            """comment-->"""
             if pred > 15:
                 pred = 15
         except:
             print("list out of index")
             exit(0)
         return pred , predicted_speed
-    else: 
+    else:
+        """<--comment"""
+        # 緩存中沒有需要的誤差，進入else
+        # error: pred_num - pred_len: 緩存少幾筆誤差
+        """comment-->"""
         error = pred_num - pred_len
         X = [[[0]*1 for i in range(PastTime)]]
         past_speed_list = temp_pastspeed_list + predicted_speed[RS]
-        
+        """<--comment"""
+        # 當len(past_speed_list) < 3 。表示SUMO處於模擬剛開始的15分鐘以內。進入if
+        """comment-->"""
         if len(past_speed_list) < PastTime :
             new_idx = PastTime-len(past_speed_list)
             for idx,i in enumerate(past_speed_list):
@@ -88,11 +124,17 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
                 lastidx = idx
                 
         else:
+            """<--comment"""
+            # 當len(past_speed_list) >= 3 。表示SUMO處於模擬開始的15分鐘以後。進入else
+            """comment-->"""
             for idx,i in enumerate(past_speed_list[-PastTime:]):
                 past_idx = past_speed_list.index(i)
                 if len(MeanSpeed) == 0:
                     error_speed = past_speed_list[past_idx] - maxspeed 
-                else: 
+                else:
+                    """<--comment"""
+                    # 超過已儲存的歷史瞬時速度，減去maxspeed
+                    "       ""comment-->"""
                     if past_idx > len(MeanSpeed) - 1: # over list length
                        error_speed = past_speed_list[past_idx] - maxspeed 
                     else:
@@ -102,7 +144,9 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
                 
 
                 lastidx = past_idx
-                
+        """<--comment"""
+        # 預測超過30分鐘，直接帶入第30分鐘的歷史瞬時速度，以節省LSTM預測的時間
+        """comment-->"""
         if pred_num > Pred_limit :
             lastidx += error
             if lastidx < len(MeanSpeed):
@@ -120,7 +164,9 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
                 return pred,predicted_speed
             else:
                 return maxspeed  ,predicted_speed
-
+        """<--comment"""
+        # 開始預測誤差
+        """comment-->"""
         for i in range(error):
             #print("enter prediction")
             pred_inst = model.predict(np.array(X))
@@ -145,9 +191,12 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
             
             predicted_speed[RS].append( pred_inst[0][0].tolist() )
 
-            if lastidx >= predtime:
-                break
-        
+            """<--comment"""
+            # predtime 移除
+            # if lastidx >= predtime:
+            #    break
+            """comment-->"""
+
         if pred <= 0:
             pred = 0.01
 

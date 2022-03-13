@@ -33,13 +33,17 @@ def pickPath(vehicle, K_paths, five_minu_loopd_avg_speed_result, RS_info,
             if idx == 0:
                 RS_Length = RS_Length - traci.vehicle.getLanePosition(vehicle)
 
+            single_mean_peed = None
+            if MeanSpeed_dict != None:
+                single_mean_peed = MeanSpeed_dict[RS]
+
             #熱啟動 先臨時給初始數值
             if Model_dict == None:
                 # pred_avg = traci.edge.getLastStepMeanSpeed(RS)
                 pred_avg = random.uniform(0.1, 13.89)
             else:
                 #TODO 这部分如果是None该怎么办 再用预测数值 depart_time其實為目標預測時間
-                pred_avg , predicted_speeds = pm.getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, Model_dict[RS], predicted_speeds, MeanSpeed_dict[RS], MeanZ_dict[RS], Bd)
+                pred_avg , predicted_speeds = pm.getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, Model_dict[RS], predicted_speeds, single_mean_peed, MeanZ_dict[RS], Bd)
 
             RS_passing_time = RS_Length / pred_avg #predicted_speed
 

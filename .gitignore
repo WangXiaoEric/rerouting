@@ -8,13 +8,17 @@
 \**\*.pyc
 /**/*.pyc
 
+\**\*.doc
+/**/*.doc
+
+\**\*.docx
+/**/*.docx
+
 *.o
-*.doc
+
 # Ada Library Information
 *.ali
 *.xml
-#*.doc
-#*.docx
 .idea/**.xml
 .idea/
 idea/

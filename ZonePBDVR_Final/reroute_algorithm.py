@@ -15,7 +15,12 @@ RS_info, TL_info, conn_TL, paths, five_minu_loopd_avg_speed_result, ranked_vehic
 """
 def Reroute(RS_info, TL_info, conn_TL, paths, five_minu_loopd_avg_speed_result, ranked_vehicles, Node_Coordinate, RSDensities,
             vehicleRS_dict, diff, same, RS_list, MeanSpeed_dict, MeanZ_dict, Model_dict):
-    
+    # print(footprint_dict)
+    # mod_name = "data/model.h5"
+    # model = load_model(mod_name)
+    """<--comment"""
+    # 每5分鐘清空一次緩存，因為LSTM預測的結果會不同
+    """comment-->"""
     #print(footprint_dict)
     #mod_name = "data/model.h5"
     #model = load_model(mod_name)
