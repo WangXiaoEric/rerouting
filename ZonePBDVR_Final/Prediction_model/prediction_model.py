@@ -79,7 +79,7 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
                     """<--comment"""
                     # 超出所儲存的Zmax、Zmin的數量，pred = 速限速度
                     """comment-->"""
-                    if len(MeanZ) == 0  or lastidx > len(MeanZ) - 1 or MeanZ["Zmax"][lastidx] == 0:
+                    if len(MeanZ["Zmax"]) == 0  or lastidx > len(MeanZ["Zmax"]) - 1 or MeanZ["Zmax"][lastidx] == 0:
                         pred = maxspeed 
                     else:
                         pred = pred_inst + MeanSpeed[lastidx]
@@ -150,7 +150,7 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
         if pred_num > Pred_limit :
             lastidx += error
             if lastidx < len(MeanSpeed):
-                if len(MeanZ) == 0 or lastidx > len(MeanZ) - 1 or MeanZ["Zmax"][lastidx] == 0 :
+                if len(MeanZ["Zmax"]) == 0 or lastidx > len(MeanZ["Zmax"]) - 1 or MeanZ["Zmax"][lastidx] == 0 :
                     avgspeed = maxspeed 
                 else:
                     avgspeed = MeanSpeed[lastidx] *  ( (MeanZ["Zmax"][lastidx] - MeanZ["Zmin"][lastidx]) * math.pow(Bd, MeanZ["q_value"][lastidx]) + MeanZ["Zmin"][lastidx])
@@ -182,7 +182,7 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
                 if lastidx > len(MeanSpeed) - 1: # over list length
                     pred = maxspeed 
                 else:
-                    if len(MeanZ) == 0  or lastidx > len(MeanZ) - 1 or MeanZ["Zmax"][lastidx] == 0:
+                    if len(MeanZ["Zmax"]) == 0  or lastidx > len(MeanZ["Zmax"]) - 1 or MeanZ["Zmax"][lastidx] == 0:
                         pred = maxspeed 
                     else:
                         pred = pred_inst[0][0].tolist() + MeanSpeed[lastidx]
