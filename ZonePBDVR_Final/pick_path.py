@@ -43,7 +43,12 @@ def pickPath(vehicle, K_paths, five_minu_loopd_avg_speed_result, RS_info,
                 # pred_avg = traci.edge.getLastStepMeanSpeed(RS)
                 pred_avg = random.uniform(0.1, 13.89)
             else:
-                #TODO 这部分如果是None该怎么办 再用预测数值 depart_time其實為目標預測時間
+                #TODO 这部分如果是None该怎么办 再用预测数值 depart_time其實為目標預測時間  测试代码 先用Model_dict['-111343195#2'] 后面再改回来
+
+                # 测试的时候所用，Model_dict['-111343195#2'] 仅加载一个DeepLearningModel 提高运算速度
+                # pred_avg, predicted_speeds = pm.getSpeed(RS, five_minu_loopd_avg_speed_result, current_time,
+                #                                          depart_time, Model_dict['-111343195#2'], predicted_speeds,
+                #                                          single_mean_peed, MeanZ_dict[RS], Bd)
                 pred_avg , predicted_speeds = pm.getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, Model_dict[RS], predicted_speeds, single_mean_peed, MeanZ_dict[RS], Bd)
 
             RS_passing_time = RS_Length / pred_avg #predicted_speed

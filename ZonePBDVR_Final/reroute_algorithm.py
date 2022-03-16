@@ -12,9 +12,11 @@ import pick_path as pp
 """do Reroute
 RS_info, TL_info, conn_TL, paths, five_minu_loopd_avg_speed_result, ranked_vehicles,
    Node_Coordinate, RSDensities, vehicleRS_dict, diff, same, all_path_RS_list, MeanSpeed_dict, MeanZ_dict, Model_dict
+   predicted_speeds为已经预测过的数据所做的缓存
 """
 def Reroute(RS_info, TL_info, conn_TL, paths, five_minu_loopd_avg_speed_result, ranked_vehicles, Node_Coordinate, RSDensities,
             vehicleRS_dict, diff, same, RS_list, MeanSpeed_dict, MeanZ_dict, Model_dict):
+
     # print(footprint_dict)
     # mod_name = "data/model.h5"
     # model = load_model(mod_name)
@@ -41,7 +43,7 @@ def Reroute(RS_info, TL_info, conn_TL, paths, five_minu_loopd_avg_speed_result, 
             continue
         
         
-        """select the optimal route from k paths"""        
+        """select the optimal route from k paths"""  #predicted_speeds 这个参数可以循环传递
         newPath, predicted_speeds = pp.pickPath(vehicle, K_paths, five_minu_loopd_avg_speed_result, RS_info, TL_info, conn_TL,
                                                Node_Coordinate, RSDensities, vehicleRS_dict[vehicle]["RS_from"], vehicleRS_dict[vehicle]["RS_to"], Model_dict,
                                                predicted_speeds, MeanSpeed_dict, MeanZ_dict)

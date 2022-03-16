@@ -3,7 +3,7 @@ from shutil import copy  # shutil 是用来复制黏贴文件的
 
 
 if __name__ == "__main__":
-    file_path = "finalZ_result"  # 想拆分的文件夹所在路径,也就是一大堆文件所在的路径
+    file_path = "interZ_result"  # 想拆分的文件夹所在路径,也就是一大堆文件所在的路径
     save_dir = "data\meanZ"  # save_dir 是想把复制出来的文件存放在的路径
 
     # 获取 file_path 下的文件和文件夹列表

@@ -6,35 +6,20 @@
 
 # Attention:必須把Cost1 run完畢（睦昆建議可以先跑10次），才能run2.
 # COST2run完，會產生檔案，然後用新檔案再run一次COst2
-
-from __future__ import absolute_import
-from __future__ import print_function
+import datetime
 import os
-import sys
-import optparse
-from optparse import OptionParser
-#import random
-import time
-#import networkx as nx
+from pathlib import Path
+
+
+import pandas as pd
 import numpy as np
-#from numpy import ndarray
-import gc
-import get_network_info as gni
-import traffic_congestion_prediction as tcp
-import vehicle_selection as vs
-import vehicle_rank as vr
-import reroute_algorithm as ra
-import xml.etree.cElementTree as ET
-#from tensorflow.python.keras.models import load_model
-#import json
-
-#讀取summary文件
-X = [i for i in range(8)]
-
-p = X[-12:]
+os.environ["CUDA_VISIBLE_DEVICES"] = '-1'   #0指定第一块GPU可用  -1为CPU
 
 
+text = 0
+abc = 0
+
+if text == 1 or abc ==1:
+    print("yes")
 
 
-print(X)
-print(p)

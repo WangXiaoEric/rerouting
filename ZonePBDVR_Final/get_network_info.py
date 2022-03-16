@@ -38,12 +38,11 @@ def GetRoadModel():
         try:
             model = load_model(Mod_dir+edge.getID()+"_model.h5") 
             Model_dict[edge.getID()] = model
+            #简化测试需要 只有简化测试的时候需要
+            # break
         except:
             Model_dict[edge.getID()] = 0
             pass
-
-        
-
     return Model_dict
 
 def GetMinMax(data_len):

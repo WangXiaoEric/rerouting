@@ -15,6 +15,7 @@ import optparse
 from optparse import OptionParser
 #import random
 import time
+import datetime
 #import networkx as nx
 import numpy as np
 #from numpy import ndarray
@@ -294,8 +295,8 @@ def run(i,VR):
                 all_path_RS_list = ra.getAllRS(paths)
                 
                 """"start re-routing""" 
-                diff , same = ra.Reroute(RS_info, TL_info, conn_TL, paths, five_minu_loopd_avg_speed_result, ranked_vehicles,
-                                         Node_Coordinate, RSDensities, vehicleRS_dict, diff, same, all_path_RS_list, MeanSpeed_dict, MeanZ_dict, Model_dict)
+                diff, same = ra.Reroute(RS_info, TL_info, conn_TL, paths, five_minu_loopd_avg_speed_result, ranked_vehicles,
+                                         Node_Coordinate, RSDensities, vehicleRS_dict, diff, same, all_path_RS_list, None, MeanZ_dict, Model_dict)
                 time_end = time.time()
                 log += ",Reroute time: "+str( time_end - time_detect)
                 gc.collect()
@@ -358,6 +359,10 @@ def run(i,VR):
 
 # this is the main entry point of this script
 if __name__ == "__main__":
+
+    #先清理所有文件，除过LSTM MODEL 文件
+    os.system("python clean_all_files.py")
+
     parser = OptionParser()#parser = OptionParser()
     # python3 main - s 0 - e 45
     # self loop. we want to run only once case, and train Driver-Behavour and LSTM
@@ -374,12 +379,20 @@ if __name__ == "__main__":
         sumoBinary = checkBinary('sumo')
         
     con_threshold = 0.7 #congestion threshold value
-    """get history average speed""" #从mean文件夹中获取资料， 需要考虑如何在Mean中生成资料
-    MeanSpeed_dict = gni.GetPastMeanSpeed()
-    """get history Zmax Zmin""" #从meanZ文件夹中获取资料， 需要考虑如何在meanZ中生成资料
+
+    """get history average speed""" #从mean文件夹中获取资料， 需要考虑如何在Mean中生成资料 TODO 此部分数据可以删除掉
+    # MeanSpeed_dict = gni.GetPastMeanSpeed()
+
+    """get history Zmax Zmin""" #从meanZ文件夹中获取资料， 需要考虑如何在meanZ中生成资料 TODO 此部分数据需要热启动
     MeanZ_dict = gni.GetPastMeanZ()
-    """get model for all road""" #获取所有路段的深度训练模型
+    """get model for all road""" #获取所有路段的深度训练模型  TODO checkmodel是否全部读出
+
+    print("Before Deep Learning model load Time:" + str(datetime.datetime.now()))
     Model_dict = gni.GetRoadModel()
+    print("After Deep Learning model load Time:" + str(datetime.datetime.now()))
+
+    #为了生成热启动数据 TODO
+    # Model_dict = None
 
     
     for i in range(start,end):
@@ -397,13 +410,14 @@ if __name__ == "__main__":
     gc.collect()
 
     os.system("python txt_to_csv.py -s "+str(start)+" -e "+str(end))
+    # 生成interavg_result 与interZ_result
     os.system("python veh_avg_inst_lstm.py -s "+str(start)+" -e "+str(end))
     if start == 0:
-        # 此命令为不同车流数据取前5次均值
-        # os.system("python3 finalavg.py")
-        os.system("python3 train_lstm.py")
-        # finalavg_result 重新命名為 mean , finalZ_result 重新命名為 meanZ 放入data 資料夾
-        os.system("move_mean_files.py")
+        #  生成finalZ_result
+        os.system("python finalavg.py")
+        #  finalZ_result 重新命名為 meanZ 放入data 資料夾  TODO out0 同时要将热启动数据移动到最新地址 out0_init；
+        os.system("python move_mean_files.py")
+        # os.system("python3 train_lstm.py")
 
 
 

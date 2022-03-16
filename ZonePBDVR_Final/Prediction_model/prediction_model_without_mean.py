@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import os
 import traci
 import math
 import pandas as pd
+from pathlib import Path
+import traceback
 
 """the speed prediction model: estimate the predicted speed for target RS"""
 #def getSpeed(RS, RS_Kjam, speed_result, vehicle, footprint, current_time, depart_time):
@@ -29,76 +32,102 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
     # maxspeed(道路速限): 13.89(m/s) == 50(km/h) SUMO的速度單位是(m/s)
     """comment-->"""
 
-    # __5___10----
-    if model == 0:
+    # 如果当前路段没有训练出的Model 则反馈最大速度
+    if model == None or model == 0:
         pred = 13.89
-        return pred , predicted_speed
-        
-    PastTime = 3
+        return pred, predicted_speed
+
     #间隔的次数，需要预测pred_numth这次的速度，那么需要循环预测
     pred_numth = int((depart_time - current_time)/300) + 1
-    for i in range(pred_numth):
-        # X = [[[0] * 1 for i in range(PastTime)]]
-        his_lstm = five_minu_loopd_avg_speed_result[-12:]
 
-        #如果小于12再从历史文件中获取
-        if(len(his_lstm) < 12):
-            avginst_data = pd.read_csv(inputdir + "/" + lane + "_" + str(fileidx) + ".csv")
-        pred_inst = model.predict(np.array(X))
+    #CASE1 缓存如果有，则直接从缓存中获取
+    if len(predicted_speed[RS]) >= pred_numth:
+        try:
+            predicted_speed[RS][pred_numth - 1]
+        except Exception as e:
+            traceback.print_exc()
+        return predicted_speed[RS][pred_numth-1], predicted_speed
+    # predicted_speed[RS].append(pred_inst[0][0].tolist())
 
-    temp_pastspeed_list = five_minu_loopd_avg_speed_result[RS]
+    #CASE2 缓存中没有则逐步预测
 
+    # 先将过去每隔五次间隔数据放进来
+    historical_lstm_input_data = five_minu_loopd_avg_speed_result[RS][:]
+    #将已经预测过的缓存数据放进来
+    historical_lstm_input_data.extend(predicted_speed[RS][:])
+    #循环迭代预测
+    for i in range(pred_numth - len(predicted_speed[RS])):
+        #往往第一次才走这种缺乏数据的情况
+        if len(historical_lstm_input_data) < 12:
+            #先从five_minu_loopd_avg_speed_result将数据全部取过来
+            # historical_lstm_input_data = five_minu_loopd_avg_speed_result[RS][-12 + i:]
+            #TODO 添加判断，如果文件不存在则从冷启动数据中获取数据 interavg_result/out0_init/
+            avginst_data = None
+            if os.path.exists('interavg_result/out0' + RS + '_0.csv'):
+                avginst_data = pd.read_csv("interavg_result/out0" + "/" + RS +"_0.csv")
+            elif Path("interavg_result/out0_init/" + RS + "_0.csv").exists():
+                avginst_data = pd.read_csv("interavg_result/out0_init/" + RS + "_0.csv")
+            #差多少数据，补充多少数据，凑够12条数据
+            required_data = avginst_data.loc[:, 'instspeed'][-(12 - len(historical_lstm_input_data)):].values
+            # historical_lstm_input_data = required_data.append(historical_lstm_input_data)
+            historical_lstm_input_data = np.append(required_data, historical_lstm_input_data)
 
-    maxspeed = 13.89
-    """<--comment"""
-    # 每次都要预测
-    # predtime 可刪除
-    predtime = 32
-    # Pred_limit 最多預測6次
-    # Pred_limit = 6
-    """comment-->"""
+            X = [[[0] * 1 for i in range(12)]]
+            for i in range(12):
+                X[0][i][0] = historical_lstm_input_data[i]
 
-    #pred_len 緩存已經LSTM預測過的數量
-    """<--comment"""
-    # 緩存中已經有需要的誤差，進入if
-    """comment-->"""
+            try:
+                pred_inst = model.predict(np.array(X))
+            except Exception as e:
+                traceback.print_exc()
 
-    """<--comment"""
-    # 超出所儲存的歷史瞬時速度的數量，pred = 速限速度
-    """comment-->"""
+            pred = pred_inst[0][0]
+            if pred <= 0:
+                pred = 0.01
+            if pred > 15:
+                pred = 15
 
-    past_speed_list = temp_pastspeed_list + predicted_speed[RS]
-    """<--comment"""
-    # 當len(past_speed_list) < 3 。表示SUMO處於模擬剛開始的15分鐘以內。進入if
-    """comment-->"""
-    if len(past_speed_list) < PastTime:
-        new_idx = PastTime - len(past_speed_list)
-        for idx, i in enumerate(past_speed_list):
-            if len(MeanSpeed) == 0:
-                X[0][new_idx][0] = i - maxspeed
-            else:
-                X[0][new_idx][0] = i - MeanSpeed[idx]
-                # print(MeanSpeed[idx])
-                new_idx += 1
+            #将预测好的数据添加进来
+            historical_lstm_input_data = historical_lstm_input_data.tolist()
+            historical_lstm_input_data.append(pred)
+            predicted_speed[RS].append(pred)
+        else:
+            historical_lstm_input_data = historical_lstm_input_data[-12:]
 
-            lastidx = idx
+            X = [[[0] * 1 for i in range(12)]]
+            for i in range(12):
+                X[0][i][0] = historical_lstm_input_data[i]
 
+            try:
+                pred_inst = model.predict(np.array(X))
+            except Exception as e:
+                traceback.print_exc()
 
+            pred = pred_inst[0][0]
+            if pred <= 0:
+                pred = 0.01
+            # """<--comment"""
+            # # speedFactor="normc(0.95,0.10,0.60,1.50)
+            # # SUMO官網定義 vehicle speed = min( maxSpeed(官網:最高車速55.55(m/s)), speedFactor * speedLimit(速限13.89，我們定義))
+            # # 所以整個路網 最低車速 = 13.89 x 0.6 。最高車速 = 13.89 x 1.5
+            # # 但是車輛難以在此路網達到最高速，故以15回傳
+            # """comment-->"""
+            if pred > 15:
+                pred = 15
 
-    avgspeed = pred * ((MeanZ["Zmax"][lastidx] - MeanZ["Zmin"][lastidx]) * math.pow(Bd, MeanZ["q_value"][lastidx]) +
+            historical_lstm_input_data.append(pred)
+            predicted_speed[RS].append(pred)
+        #增加了一个数据，要删除一个数据, 即将第一个数据去除
+        historical_lstm_input_data = historical_lstm_input_data[-12:]
+
+    #找到当前MeanZ的位置
+    lastidx = len(five_minu_loopd_avg_speed_result[RS]) + pred_numth
+    if len(MeanZ["Zmax"]) <= lastidx:
+        pred = historical_lstm_input_data[-1]
+    else:
+        pred = historical_lstm_input_data[-1] * ((MeanZ["Zmax"][lastidx] - MeanZ["Zmin"][lastidx]) * math.pow(Bd, MeanZ["q_value"][lastidx]) +
                 MeanZ["Zmin"][lastidx])
 
-
-    if pred <= 0:
-        pred = 0.01
-    """<--comment"""
-    # speedFactor="normc(0.95,0.10,0.60,1.50)
-    # SUMO官網定義 vehicle speed = min( maxSpeed(官網:最高車速55.55(m/s)), speedFactor * speedLimit(速限13.89，我們定義))
-    # 所以整個路網 最低車速 = 13.89 x 0.6 。最高車速 = 13.89 x 1.5
-    # 但是車輛難以在此路網達到最高速，故以15回傳
-    """comment-->"""
-    if pred > 15:
-        pred = 15
 
     return pred ,predicted_speed
 

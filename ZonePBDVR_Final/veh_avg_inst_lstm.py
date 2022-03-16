@@ -12,6 +12,9 @@ import math
 from random import sample
 import pandas as pd
 import numpy as np
+
+import traceback
+
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
     sys.path.append(tools)
@@ -30,9 +33,12 @@ def CalMinsAvgSpeedSingleFile(outputdir , data ,LoopTime = 60):
     :return:
     """
     outputdir = outputdir 
+    global out
     out = pd.DataFrame(columns=["interval","avgspeed"])
     speedfactor = 1#0.95
     #print(len(data))
+    StartIdx = 0
+    t = 0
     for idx in range(len(data)):
         #print(idx)
         if idx == 0:
@@ -73,7 +79,8 @@ def CalMinsAvgSpeedSingleFile(outputdir , data ,LoopTime = 60):
                 t = int(data.iloc[idx]["time"]/LoopTime) # update t
     #print(len(out))
     #leave loop
-    EndIdx = idx + 1 #last one need to plus 1
+    # EndIdx = idx + 1 #last one need to plus 1 此语句会报 reference before defination错误
+    EndIdx = len(data) + 1 #last one need to plus 1
     num = len(data[StartIdx:EndIdx]["avgspeed"])
     if num == 0:
         avg_speed = 0
@@ -111,10 +118,13 @@ def CalMinsInstSpeedSingleFile(outputdir , data , avg_pd , LoopTime = 60):
     :return:
     """
     outputdir = outputdir 
+    global out
     out = pd.DataFrame(columns=["interval","instspeed"])
     speedfactor = 1#0.95
     #avg_pd = avg_pd.drop(columns="interval")
     #print(len(data))
+    StartIdx = 0
+    t = 0
     for idx in range(len(data)):
         #print(idx)
         if idx == 0:
@@ -152,7 +162,8 @@ def CalMinsInstSpeedSingleFile(outputdir , data , avg_pd , LoopTime = 60):
                 t = int(data.iloc[idx]["time"]/LoopTime) # update t
     #print(len(out))
     #leave loop
-    EndIdx = idx + 1 #last one need to plus 1
+    # EndIdx = idx + 1 #last one need to plus 1
+    EndIdx = len(data) + 1
     num = len(data[StartIdx:EndIdx]["instspeed"])
     if num == 0:
         avg_speed = 0
@@ -261,6 +272,8 @@ def SelectVehicleAndZ(outputdir, avg_data , inst_data ,LoopTime = 300):
         avginst_data["interval"] =  inst_data["interval"]
         avginst_data["avginstspeed"] = inst_data["instspeed"]
 
+        StartIdx = 0
+        t = 0
         for idx in range(len(orig_avg_data)):
             if idx == 0:
                 t = int(orig_avg_data.iloc[idx]["End-exit"]/LoopTime) # 以每五分鐘一個區間
@@ -305,7 +318,8 @@ def SelectVehicleAndZ(outputdir, avg_data , inst_data ,LoopTime = 300):
                 t = int(orig_avg_data.iloc[idx]["End-exit"]/LoopTime)
 
         #最後一個 要加1
-        EndIdx = idx + 1 
+        # EndIdx = idx + 1
+        EndIdx = len(data) + 1
         num = len(orig_avg_data[StartIdx:EndIdx]["avg-speed"])
         interval = t 
 
@@ -327,12 +341,22 @@ def SelectVehicleAndZ(outputdir, avg_data , inst_data ,LoopTime = 300):
                 Zmax = Z_data["Zvalue"].max() # 取得此區間的最大Z值
                 Zmin = Z_data["Zvalue"].min()# 取得此區間的最小Z值
                 TotalNum = len( Z_data["Zvalue"])#取得選擇的車輛數
-                # 計算 Z* 值
+                # 計算 Z* 值 formalization后的数值
                 ZS_data = CalZSvalue(Z_data)
-                # 計算 q 值
+                # 計算 q 值 指数方求和
                 total = np.log(ZS_data["ZSvalue"].astype(float)).sum()
                 q_value = -1 * total / (TotalNum)
                 newrow = {"interval":interval ,"Zmax":Zmax,"Zmin":Zmin,"q_value":q_value,"SelectedNum":TotalNum}
+                Final_data = Final_data.append(newrow, ignore_index=True)
+
+        # 讀取summary文件  TODO  補齊即可
+        summary = open('txt_result/out0/summary.txt', 'r')
+        sime_time = int(summary.read())
+        # print(sime_time)
+        append_num = int(sime_time / LoopTime) + 1 - Final_data.shape[0]
+        if append_num > 0:
+            for i in range(append_num):
+                newrow = {"interval":interval + i + 1 ,"Zmax":1,"Zmin":0,"q_value":0,"SelectedNum":0}
                 Final_data = Final_data.append(newrow, ignore_index=True)
 
         Final_data.to_csv(outputdir, index=False)
@@ -356,9 +380,6 @@ if __name__ == "__main__":
     net = sumolib.net.readNet(NetName)
     edges = net.getEdges()
     Lane_list = []
-
-
-
 
     for edge in edges:
         lanes = edge.getLanes()
@@ -404,7 +425,10 @@ if __name__ == "__main__":
                 SelectVehicleAndZ('interZ_result/out' + lstm+str(i)+"/SelectSpeed_"+lane +".csv" , tempavg , inst_pd ,LoopTime = 300)
                 
             except Exception as e:
-                print(e)
+                if isinstance(e, FileNotFoundError):
+                    print(e)
+                else:
+                    traceback.print_exc()
                 continue
 
 
