@@ -9,9 +9,9 @@ total_mean_routeLength = []
 numbers_of_reroutingcars = []
 times = []
 # 車子總數
-totalcar = 22000
+totalcar = 12000
 Dirname = "test"
-for i in range(0, 15):
+for i in range(0, 1):
     # 檔案路徑自行設定即可
     tree = ET.ElementTree(file='trip_info/' + Dirname + '/tripinfo' + str(i + 1) + '.xml')
     tree.getroot()

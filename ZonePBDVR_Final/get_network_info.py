@@ -38,7 +38,7 @@ def GetRoadModel():
         try:
             model = load_model(Mod_dir+edge.getID()+"_model.h5") 
             Model_dict[edge.getID()] = model
-            #简化测试需要 只有简化测试的时候需要
+            #简化测试需要 只有简化测试的时候需要 TODO
             # break
         except:
             Model_dict[edge.getID()] = 0
@@ -62,7 +62,7 @@ def MakePdAndDict(data_max,data_min,columns):
     return df , Num_dict
 
 def GetPastMeanZ():
-    csvfile = 'data/meanZ/selected_'
+    csvfile = 'data/meanZ/SelectSpeed_'
     NetName = "data/01/Tainan.net.xml"
 
     abs_file = __file__
@@ -84,7 +84,8 @@ def GetPastMeanZ():
 
         for idx , lane in enumerate(lanes):
             try:
-                tempSelected_data = pd.read_csv(csvfile+lane.getID()+"_mean.csv")
+                # tempSelected_data = pd.read_csv(csvfile+lane.getID()+"_mean.csv")
+                tempSelected_data = pd.read_csv(csvfile + lane.getID() + ".csv")
                 tempSelected_data = tempSelected_data.drop(columns="interval")
                 tempSelected_data = tempSelected_data.drop(columns="SelectedNum")
                 sel_len.append(len(tempSelected_data))

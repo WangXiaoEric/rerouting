@@ -122,7 +122,7 @@ def getSpeed(RS, five_minu_loopd_avg_speed_result, current_time, depart_time, mo
 
     #找到当前MeanZ的位置
     lastidx = len(five_minu_loopd_avg_speed_result[RS]) + pred_numth
-    if len(MeanZ["Zmax"]) <= lastidx:
+    if MeanZ == None or len(MeanZ["Zmax"]) <= lastidx:
         pred = historical_lstm_input_data[-1]
     else:
         pred = historical_lstm_input_data[-1] * ((MeanZ["Zmax"][lastidx] - MeanZ["Zmin"][lastidx]) * math.pow(Bd, MeanZ["q_value"][lastidx]) +
