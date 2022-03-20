@@ -391,6 +391,7 @@ if __name__ == "__main__":
     Model_dict = gni.GetRoadModel()
     print("After Deep Learning model load Time:" + str(datetime.datetime.now()))
 
+    # Model_dict = None
     #为了生成热启动数据 TODO
     # Model_dict = None
 
@@ -414,7 +415,7 @@ if __name__ == "__main__":
     os.system("python veh_avg_inst_lstm.py -s "+str(start)+" -e "+str(end))
     if start == 0:
         #  生成finalZ_result
-        os.system("python finalavg.py")
+        # os.system("python finalavg.py")
         #  finalZ_result 重新命名為 meanZ 放入data 資料夾  TODO out0 同时要将热启动数据移动到最新地址 out0_init；
         os.system("python move_mean_files.py")
         # os.system("python3 train_lstm.py")

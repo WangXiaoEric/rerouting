@@ -9,17 +9,24 @@
 import datetime
 import os
 from pathlib import Path
-
-
-import pandas as pd
+import traceback
 import numpy as np
-os.environ["CUDA_VISIBLE_DEVICES"] = '-1'   #0指定第一块GPU可用  -1为CPU
+
+def test():
+    try:
+        test = np.infty
+        return int(test / 300)
+
+    except Exception as e:
+        traceback.print_exc()
+        return 1
+
+if __name__ == "__main__":
+    print(test())
+    print("test")
 
 
-text = 0
-abc = 0
 
-if text == 1 or abc ==1:
-    print("yes")
+
 
 

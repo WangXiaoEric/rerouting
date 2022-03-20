@@ -27,6 +27,11 @@ def pickPath(vehicle, K_paths, five_minu_loopd_avg_speed_result, RS_info,
         depart_time = current_time
         for idx, RS in enumerate(path):
 
+            # get next TL ID & linkindex (do not consider final RS)
+            if idx < len(path) - 1:
+                next_RS = path[idx + 1]
+                TL = conn_TL[(RS, next_RS)]
+
             #get RS_Length and RS_Kjam
             RS_Length = float(RS_info[RS][2])
 
@@ -53,10 +58,27 @@ def pickPath(vehicle, K_paths, five_minu_loopd_avg_speed_result, RS_info,
 
             RS_passing_time = RS_Length / pred_avg #predicted_speed
 
-            tt = tt + RS_passing_time
-            depart_time += RS_passing_time
+            # tt = tt + RS_passing_time
+            # depart_time += RS_passing_time
 
-        travel_time.append(tt)
+            if idx == (len(path) - 1):
+                RS_travel_time = RS_passing_time
+            else:
+                # connection �W�� TL ����B�� TL �Q�w�q�b net.xml ��
+                if TL and TL[0] in TL_info.keys():
+                    arriving_time = depart_time + RS_passing_time
+                    RS_queuing_time = pm.getQueuingTime(arriving_time, RS, RS_Length, TL, TL_info[TL[0]])
+
+                else:
+                    RS_queuing_time = 0
+
+                RS_travel_time = RS_passing_time + RS_queuing_time
+
+            depart_time = depart_time + RS_travel_time
+
+        # travel_time.append(tt)
+        travel_time.append(depart_time - current_time)
+
 
     for i in range(len(travel_time)):
         path_cost.update({travel_time[i]:K_paths[i]})
